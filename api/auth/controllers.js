@@ -36,6 +36,14 @@ const register = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   try {
+    const payload = {
+      _id: user._id,
+      username: user.username,
+    };
+    const token = jwt.sign(payload, proces.env.SECRET_PASS, {
+      expiresIn: "4h",
+    });
+
     return res.status(200).json({ token });
   } catch (error) {
     next(error);
