@@ -1,8 +1,9 @@
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
+require("dotenv").config();
 const LocalStrategy = require("passport-local").Strategy;
 const JWTStrategy = require("password-jwt").Strategy;
-
+const { fromAuthHeaderAsBearerToken } = require("passport-jwt").ExtractJwt;
 const localStrategy = new LocalStrategy(
   {
     usernameField: "username",
@@ -24,9 +25,24 @@ const localStrategy = new LocalStrategy(
     }
   }
 );
-const JWTStrategy = new JWTStrategy({
-  jwtFromRequest: fromAuthHeaderAsBearerToken(),
-  secret0rKey: process.env.SECRECT_KEY,
-});
+const JWTStrategy = new JWTStrategy(
+  {
+    jwtFromRequest: fromAuthHeaderAsBearerToken(),
+    secret0rKey: process.env.SECRET_PASS,
+  },
+  async (payload, done) => {
+    try {
+      const userId = payload._id;
+      const user = await User.findById(userId);
+      if (!user) return done({ message: "user not found!" });
+      if (Date.now() / 1000 > payload.exp) {
+        return done({ message: "token expired!" });
+      }
+      return done(null, user); // req.user = user
+    } catch (error) {
+      done(error);
+    }
+  }
+);
 
-module.exports = localStrategy;
+module.exports = { localStrategy, JWTStrategy };

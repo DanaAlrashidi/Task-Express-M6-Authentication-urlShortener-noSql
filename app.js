@@ -9,7 +9,7 @@ const errorHandler = require("./middlewares/errorHandler");
 const authRouter = require("./api/auth/routes");
 const morgan = require("morgan");
 const passport = require("passport");
-const localStrategy = require("./middlewares/passport");
+const { localStrategy, jwtStrategy } = require("./middlewares/passport");
 
 const app = express();
 connectDb();
@@ -18,6 +18,7 @@ app.use(express.json());
 app.use(morgan("dev"));
 app.use(passport.initialize());
 passport.use("local", localStrategy);
+passport.use("jwt", jwtStrategy);
 app.use("/urls", urlRoutes);
 app.use(userRoutes);
 

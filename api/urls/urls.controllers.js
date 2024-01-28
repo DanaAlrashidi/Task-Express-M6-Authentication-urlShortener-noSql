@@ -10,9 +10,9 @@ exports.shorten = async (req, res) => {
   try {
     req.body.shortUrl = `${baseUrl}/${urlCode}`;
     req.body.urlCode = urlCode;
-    req.body.userId = req.params.userId;
+    req.body.userId = req.user._id;
     const newUrl = await Url.create(req.body);
-    await User.findByIdAndUpdate(req.params.userId, {
+    await User.findByIdAndUpdate(req.user._id, {
       $push: { urls: newUrl._id },
     });
     res.json(newUrl);
@@ -36,12 +36,14 @@ exports.redirect = async (req, res) => {
 
 exports.deleteUrl = async (req, res) => {
   try {
-    const url = await Url.findOne({ urlCode: req.params.code });
-    if (url) {
-      await Url.findByIdAndDelete(url._id);
-      return res.status(201).json("Deleted");
+    const { urlId } = req.params;
+    const url = await Url.findById({ urlId });
+    if (!url) return res.status(404).json({ message: "url not found" });
+    if (url.user.equals(req.user._id)) {
+      await Url.deleteOne();
+      return res.status(204).end();
     } else {
-      return res.status(404).json("No URL Found");
+      return res.status(401).json({ message: "No URL Found" });
     }
   } catch (err) {
     next(err);
